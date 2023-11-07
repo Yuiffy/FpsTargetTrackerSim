@@ -146,9 +146,9 @@
 
             // 每隔一段时间闪一下
             if (Math.random() < flashRate) {
-                box.element.style.hidden = true;
+                box.element.style.visibility = 'hidden';
                     setTimeout(() => {
-                        box.element.style.hidden = false;
+                        box.element.style.visibility = 'visible';
                     }, 200);
             }
         });
