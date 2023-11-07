@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enemy Box Simulation with Mouse Tracking</title>
+    <style>
+        .enemy-box {
+            border: 2px solid red;
+            position: absolute;
+            background-color: transparent;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    // Parse the query string for 'numBoxes'
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const params = Object.fromEntries(urlSearchParams.entries());
+
+    const numberOfBoxes = params.numBoxes ? parseInt(params.numBoxes) : 5; // default to 5 if not specified
+    const boxes = [];
+    const bufferZone = 100; // 屏幕外缓冲区域大小
+
+    // 统一处理框的位置循环逻辑
+    function wrapPosition(position, size) {
+        if (position < -size - bufferZone) {
+            position = window.innerWidth + bufferZone;
+        } else if (position > window.innerWidth + bufferZone) {
+            position = -size - bufferZone;
+        }
+        return position;
+    }
+
+    // 创建框并设置初始位置和速度
+    for (let i = 0; i < numberOfBoxes; i++) {
+        const box = document.createElement('div');
+        box.className = 'enemy-box';
+        // 随机大小
+        const size = Math.random() * 30 + 20; // 大小在20px到50px之间
+        box.style.width = `${size}px`;
+        box.style.height = `${size * 2.5}px`; // 高度是宽度的2.5倍
+
+        const centerY = window.innerHeight / 2;
+        const randomOffsetY = (Math.random() - 0.5) * 200;
+
+        box.style.top = `${centerY + randomOffsetY}px`;
+        box.style.left = `${Math.random() * window.innerWidth}px`;
+        document.body.appendChild(box);
+
+        boxes.push({
+            element: box,
+            size: size,
+            speed: (50 / size) * (Math.random() * 0.5 + 0.5), // 大的快，小的慢
+            direction: Math.random() < 0.5 ? -1 : 1, // 随机方向
+            move: true, // 初始设定为移动状态
+            jumpChance: 0.01 // 跳跃的概率
+        });
+    }
+
+    document.addEventListener('mousemove', function (event) {
+        const mouseSpeed = event.movementX;
+
+        boxes.forEach(box => {
+            let newPositionX = box.element.offsetLeft - mouseSpeed;
+            newPositionX = wrapPosition(newPositionX, box.size);
+            box.element.style.left = `${newPositionX}px`;
+        });
+    });
+
+    function moveBoxes() {
+        boxes.forEach(box => {
+            if (box.move) {
+                let newPositionX = box.element.offsetLeft + (box.speed * box.direction);
+                newPositionX = wrapPosition(newPositionX, box.size);
+
+                // 随机跳跃逻辑
+                if (Math.random() < box.jumpChance) {
+                    // 模拟跳跃，突然在Y轴上移动一小段距离
+                    const jumpHeight = Math.random() * 20 - 10; // -10px到10px的随机值
+                    let newPositionY = box.element.offsetTop + jumpHeight;
+                    box.element.style.top = `${newPositionY}px`;
+                }
+
+                box.element.style.left = `${newPositionX}px`;
+            }
+
+            // 每隔一段时间随机决定框是否移动
+            if (Math.random() < 0.01) {
+                box.move = !box.move;
+            }
+
+            // 每隔一段时间随机决定框是否反向
+            if (Math.random() < 0.01) {
+                box.direction = -box.direction;
+            }
+        });
+
+        requestAnimationFrame(moveBoxes);
+    }
+
+    moveBoxes(); // 开始移动框
+</script>
+
+</body>
+</html>
