@@ -20,6 +20,8 @@
     const params = Object.fromEntries(urlSearchParams.entries());
 
     const numberOfBoxes = params.numBoxes ? parseInt(params.numBoxes) : 5; // 默认为 5
+    // 颜色从query获取，默认绿色
+    const color = params.color ? params.color : 'lime';
     const boxes = [];
     const bufferZone = 100; // 屏幕外缓冲区大小
     // 基准速度，这个值您可以根据实际情况调整
@@ -51,6 +53,8 @@
 
         box.style.top = `${centerY + randomOffsetY}px`;
         box.style.left = `${Math.random() * window.innerWidth}px`;
+        // 边框颜色
+        box.style.borderColor = color;
         document.body.appendChild(box);
 
         // 保持元素的高度在一开始randomOffsetY能生成的范围内

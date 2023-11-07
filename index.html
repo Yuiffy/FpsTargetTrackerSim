@@ -10,15 +10,22 @@
 <form id="setupForm">
     <label for="numBoxes">Enter number of boxes:</label>
     <input type="number" id="numBoxes" name="numBoxes" min="1" value="5">
-    <button type="submit">Start Simulation</button>
+    <label for="colorPicker">Choose a color:</label>
+    <input type="color" id="colorPicker" name="color" value="#ff0000">
+    <div>
+        <button type="submit">Start Simulation</button>
+    </div>
 </form>
-
 <script>
-    document.getElementById('setupForm').onsubmit = function(event) {
+    const numBoxesInput = document.getElementById('numBoxes');
+    const colorPicker = document.getElementById('colorPicker');
+    document.getElementById('setupForm').onsubmit = function (event) {
         event.preventDefault();
-        const numBoxes = document.getElementById('numBoxes').value;
-        window.location.href = `simulation.html?numBoxes=${numBoxes}`; // Redirect to the simulation page with the specified number of boxes
-    };
+        const numBoxes = numBoxesInput.value;
+        const color = colorPicker.value.slice(1); // 去掉'#'
+        window.location.href = `simulation.html?numBoxes=${numBoxes}&color=${color}`;
+    }
 </script>
+
 </body>
 </html>
