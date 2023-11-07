@@ -9,13 +9,13 @@
             border: 2px solid red;
             position: absolute;
             background-color: transparent;
+            transition: top 0.5s ease-in-out, width 2s ease, height 2s ease; /* 平滑地改变位置和大小 */
         }
     </style>
 </head>
 <body>
 
 <script>
-    // Parse the query string for 'numBoxes'
     const urlSearchParams = new URLSearchParams(window.location.search);
     const params = Object.fromEntries(urlSearchParams.entries());
 
@@ -55,7 +55,9 @@
             speed: (50 / size) * (Math.random() * 0.5 + 0.5), // 大的快，小的慢
             direction: Math.random() < 0.5 ? -1 : 1, // 随机方向
             move: true, // 初始设定为移动状态
-            jumpChance: 0.01 // 跳跃的概率
+            jumpChance: 0.002, // 跳跃的概率
+            jumping: false, // 是否正在跳跃
+            jumpHeight: Math.random() * 20 + 10 // 跳跃高度
         });
     }
 
@@ -63,7 +65,7 @@
         const mouseSpeed = event.movementX;
 
         boxes.forEach(box => {
-            let newPositionX = box.element.offsetLeft - mouseSpeed;
+            let newPositionX = box.element.offsetLeft - mouseSpeed * (box.size / 50);
             newPositionX = wrapPosition(newPositionX, box.size);
             box.element.style.left = `${newPositionX}px`;
         });
@@ -75,15 +77,19 @@
                 let newPositionX = box.element.offsetLeft + (box.speed * box.direction);
                 newPositionX = wrapPosition(newPositionX, box.size);
 
-                // 随机跳跃逻辑
-                if (Math.random() < box.jumpChance) {
-                    // 模拟跳跃，突然在Y轴上移动一小段距离
-                    const jumpHeight = Math.random() * 20 - 10; // -10px到10px的随机值
-                    let newPositionY = box.element.offsetTop + jumpHeight;
-                    box.element.style.top = `${newPositionY}px`;
-                }
-
                 box.element.style.left = `${newPositionX}px`;
+            }
+
+            // 随机决定是否跳跃
+            if (!box.jumping && Math.random() < box.jumpChance) {
+                box.jumping = true;
+                box.element.style.top = `${parseInt(box.element.style.top) - box.jumpHeight}px`;
+                setTimeout(() => {
+                    box.element.style.top = `${parseInt(box.element.style.top) + box.jumpHeight}px`;
+                    setTimeout(() => {
+                        box.jumping = false;
+                    }, 500);
+                }, 500);
             }
 
             // 每隔一段时间随机决定框是否移动
@@ -95,12 +101,20 @@
             if (Math.random() < 0.01) {
                 box.direction = -box.direction;
             }
+
+            // 每隔一段时间调整一次大小
+            if (Math.random() < 0.001) {
+                const newSize = Math.random() * 30 + 20;
+                box.element.style.width = `${newSize}px`;
+                box.element.style.height = `${newSize * 2.5}px`;
+            }
         });
 
         requestAnimationFrame(moveBoxes);
     }
 
     moveBoxes(); // 开始移动框
+
 </script>
 
 </body>
