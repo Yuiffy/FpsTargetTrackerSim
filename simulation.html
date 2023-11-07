@@ -22,6 +22,8 @@
     const numberOfBoxes = params.numBoxes ? parseInt(params.numBoxes) : 5; // 默认为 5
     // 颜色从query获取，默认绿色
     const color = params.color ? `#${params.color}` : 'lime';
+    // 闪烁概率
+    const flashRate = params.flashRate ? Number.parseFloat(params.flashRate) : 0.01;
     const boxes = [];
     const bufferZone = 100; // 屏幕外缓冲区大小
     // 基准速度，这个值您可以根据实际情况调整
@@ -140,6 +142,14 @@
                 box.element.style.height = `${newSize * 2.5}px`;
                 // 重新计算跳跃高度
                 box.jumpHeight = newSize / 2;
+            }
+
+            // 每隔一段时间闪一下
+            if (Math.random() < flashRate) {
+                box.element.style.hidden = true;
+                    setTimeout(() => {
+                        box.element.style.hidden = false;
+                    }, 200);
             }
         });
 
