@@ -9,7 +9,7 @@
             border: 2px solid red;
             position: absolute;
             background-color: transparent;
-            transition: top 0.5s ease-in-out, width 2s ease, height 2s ease; /* 平滑地改变位置和大小 */
+            transition: top 0.5s ease-in-out, width 2s ease, height 2s ease; /* 平滑地改变位置、大小 */
         }
     </style>
 </head>
@@ -19,11 +19,13 @@
     const urlSearchParams = new URLSearchParams(window.location.search);
     const params = Object.fromEntries(urlSearchParams.entries());
 
-    const numberOfBoxes = params.numBoxes ? parseInt(params.numBoxes) : 5; // default to 5 if not specified
+    const numberOfBoxes = params.numBoxes ? parseInt(params.numBoxes) : 5; // 默认为 5
     const boxes = [];
-    const bufferZone = 100; // 屏幕外缓冲区域大小
+    const bufferZone = 100; // 屏幕外缓冲区大小
+    // 基准速度，这个值您可以根据实际情况调整
+    const baseSpeed = 50; // 敌人在屏幕上以 1px 出现时的速度
 
-    // 统一处理框的位置循环逻辑
+    // 处理框的位置循环逻辑
     function wrapPosition(position, size) {
         if (position < -size - bufferZone) {
             position = window.innerWidth + bufferZone;
@@ -33,31 +35,38 @@
         return position;
     }
 
+
     // 创建框并设置初始位置和速度
     for (let i = 0; i < numberOfBoxes; i++) {
         const box = document.createElement('div');
         box.className = 'enemy-box';
         // 随机大小
-        const size = Math.random() * 30 + 20; // 大小在20px到50px之间
+        const size = Math.random() * 30 + 20; // 大小在 20px 到 50px 之间
         box.style.width = `${size}px`;
-        box.style.height = `${size * 2.5}px`; // 高度是宽度的2.5倍
+        box.style.height = `${size * 2.5}px`; // 高度是宽度的 2.5 倍
 
         const centerY = window.innerHeight / 2;
-        const randomOffsetY = (Math.random() - 0.5) * 200;
+        const MAX_Y_OFFSET = 100;  // TODO: 目前是限制高度，没有考虑远近，后续需要根据远近来限制高度，模拟真实视野
+        const randomOffsetY = (Math.random() - 0.5) * MAX_Y_OFFSET;
 
         box.style.top = `${centerY + randomOffsetY}px`;
         box.style.left = `${Math.random() * window.innerWidth}px`;
         document.body.appendChild(box);
 
+        // 保持元素的高度在一开始randomOffsetY能生成的范围内
+        function clampPosition(value) {
+            return Math.min(Math.max(value, centerY - MAX_Y_OFFSET), centerY + MAX_Y_OFFSET);
+        }
+
         boxes.push({
             element: box,
             size: size,
-            speed: (50 / size) * (Math.random() * 0.5 + 0.5), // 大的快，小的慢
+            speed: (baseSpeed / size) * (Math.random() * 0.9 + 0.1), // 大的快，小的慢
             direction: Math.random() < 0.5 ? -1 : 1, // 随机方向
             move: true, // 初始设定为移动状态
             jumpChance: 0.002, // 跳跃的概率
             jumping: false, // 是否正在跳跃
-            jumpHeight: Math.random() * 20 + 10 // 跳跃高度
+            jumpHeight: size / 2 // 跳跃高度与大小挂钩
         });
     }
 
@@ -65,7 +74,7 @@
         const mouseSpeed = event.movementX;
 
         boxes.forEach(box => {
-            let newPositionX = box.element.offsetLeft - mouseSpeed * (box.size / 50);
+            let newPositionX = box.element.offsetLeft - mouseSpeed * (box.size / 50.0);
             newPositionX = wrapPosition(newPositionX, box.size);
             box.element.style.left = `${newPositionX}px`;
         });
@@ -82,10 +91,28 @@
 
             // 随机决定是否跳跃
             if (!box.jumping && Math.random() < box.jumpChance) {
+                const jumpDistance = box.jumpHeight;
                 box.jumping = true;
-                box.element.style.top = `${parseInt(box.element.style.top) - box.jumpHeight}px`;
+                let newTop = parseInt(box.element.style.top) - jumpDistance;
+                newTop = clampPosition(newTop, 0, window.innerHeight - box.size * 2.5);
+                box.element.style.top = `${newTop}px`;
+
                 setTimeout(() => {
-                    box.element.style.top = `${parseInt(box.element.style.top) + box.jumpHeight}px`;
+                    // 偶尔不下降（跳到东西上了）
+                    if (Math.random() < 0.1) {
+                        return;
+                    }
+                    newTop = parseInt(box.element.style.top) + jumpDistance;
+                    newTop = clampPosition(newTop);
+                    box.element.style.top = `${newTop}px`;
+
+                    // 偶尔增加一个向下更多的位置变动（跳下去了）
+                    if (Math.random() < 0.1) {
+                        newTop += jumpDistance * (Math.random() * 2 + 1); // 向下可变动的更多
+                        newTop = clampPosition(newTop);
+                        box.element.style.top = `${newTop}px`;
+                    }
+
                     setTimeout(() => {
                         box.jumping = false;
                     }, 500);
@@ -93,7 +120,7 @@
             }
 
             // 每隔一段时间随机决定框是否移动
-            if (Math.random() < 0.01) {
+            if (Math.random() < 0.05) {
                 box.move = !box.move;
             }
 
@@ -107,6 +134,8 @@
                 const newSize = Math.random() * 30 + 20;
                 box.element.style.width = `${newSize}px`;
                 box.element.style.height = `${newSize * 2.5}px`;
+                // 重新计算跳跃高度
+                box.jumpHeight = newSize / 2;
             }
         });
 
